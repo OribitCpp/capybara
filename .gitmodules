@@ -1,0 +1,6 @@
+[submodule "3rd/llvm-project"]
+	path = 3rd/llvm-project
+	url = https://github.com/llvm/llvm-project.git
+[submodule "3rd/z3"]
+	path = 3rd/z3
+	url = https://github.com/Z3Prover/z3.git
