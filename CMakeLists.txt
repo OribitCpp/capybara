@@ -3,7 +3,11 @@ project(capybara)
 
 set(CMAKE_CXX_STANDARD 17)
 
+
+find_package(LLVM CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
+
 add_subdirectory(core)
-add_subdirectory(main)
-add_subdirectory(platform)
+add_subdirectory(modules)
 add_subdirectory(3rd)
+add_subdirectory(main)

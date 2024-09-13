@@ -1,6 +1,0 @@
-file(GLOB PLATFORM_WINDOWS_H "*.h")
-file(GLOB PLATFORM_WINDOWS_CPP "*.cpp")
-
-add_executable(${PROJECT_NAME} ${PLATFORM_WINDOWS_H} ${PLATFORM_WINDOWS_CPP} )
-
-target_link_libraries(${PROJECT_NAME} PRIVATE Main)
