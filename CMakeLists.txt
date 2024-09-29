@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(LLVM CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 
+include_directories(${LLVM_INCLUDE_DIRS})
+
 add_subdirectory(core)
 add_subdirectory(modules)
 add_subdirectory(3rd)
