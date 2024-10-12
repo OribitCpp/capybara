@@ -1,6 +1,13 @@
 #include "Application.h"
 #include <iostream>
 
+#include "ModuleWrapper.h"
+#include "FileLoader.h"
+
+#include <llvm/Support/ManagedStatic.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/IR/Module.h>
+
 Application::Application(int argc, char* argv[])
 {
 	parseConsoleParameters(argc, argv);
@@ -8,6 +15,19 @@ Application::Application(int argc, char* argv[])
 
 void Application::init() {
 	Logger::info("Appplication Init Stage");
+	llvm::InitializeNativeTarget();
+	m_llvmContext = std::make_shared<llvm::LLVMContext>();
+}
+void Application::ready() {
+	std::vector<std::unique_ptr<llvm::Module>> modules;
+	FileLoader fileLoader(*m_llvmContext);
+	fileLoader.load("D:/capybara/get_sign.bc", modules);
+
+	std::unique_ptr<llvm::Module> finalModule = ModuleWrapper::linkModules(modules);
+	llvm::Function *mainFunc = finalModule->getFunction("main");
+	
+	m_moduleStorage = std::make_unique<ModuleWrapper>(finalModule);
+	m_moduleStorage->optimiseWithPass();
 }
 
 void Application::execute()
@@ -50,4 +70,8 @@ void Application::processInput()
 	}
 
 
+}
+
+void Application::exit() {
+	llvm::llvm_shutdown();
 }

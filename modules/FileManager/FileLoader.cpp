@@ -5,10 +5,11 @@
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Object/ObjectFile.h>
 #include <llvm/Object/Archive.h>
+#include <iostream>
 
 using namespace llvm;
 
-FileLoader::FileLoader(const std::string& fileName, llvm::LLVMContext& context):m_fileName(fileName),m_context(context)
+FileLoader::FileLoader(llvm::LLVMContext& context):m_context(context)
 {
 }
 
@@ -16,11 +17,13 @@ FileLoader::~FileLoader()
 {
 }
 
-void FileLoader::load(std::vector<std::unique_ptr<llvm::Module>>& result)
+void FileLoader::load(const std::string& fileName,  std::vector<std::unique_ptr<llvm::Module>>& result)
 {
-	ErrorOr<std::unique_ptr<MemoryBuffer>> bufferErr = MemoryBuffer::getFileOrSTDIN(m_fileName);
-	if (bufferErr.getError()) {
-		Logger::error("load file {} failed", m_fileName);
+
+	ErrorOr<std::unique_ptr<MemoryBuffer>> bufferErr = MemoryBuffer::getFileOrSTDIN(fileName);
+	std::error_code error = bufferErr.getError();
+	if (error) {
+		std::cerr << "load file" << fileName <<"failed: "<< error.message() << std::endl;
 		return;
 	}
 

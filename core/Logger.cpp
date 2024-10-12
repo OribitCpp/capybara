@@ -4,6 +4,12 @@
 
 std::shared_ptr<spdlog::logger> Logger::m_logger;
 
+Logger& Logger::instance()
+{
+	static Logger logger;
+	return logger;
+}
+
 Logger::Logger()
 {
 	std::string fileName = "logs/" + Timer::YMDHMS() + ".txt";
