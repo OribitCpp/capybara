@@ -1,6 +1,11 @@
 #ifndef  EXPR_H
 #define EXPR_H
 
+#include <llvm/ADT/APInt.h>
+#include <memory>
+
+//   -1 =  minus expr + constant expr
+
 
 template<typename DerivedType, typename BaseType>
 class TIsDerived
@@ -23,22 +28,7 @@ public:
 };
 
 
-enum OperandWidth
-{
-	INVALID = 0,
-	BOOL = 1,
-	INT8 =8,
-	INT16 =16,
-	INT32 = 32,
-	INT64 =64,
-	FL80 = 80,
-	INT128 = 128,
-	INT256=256,
-	INT512=512,
-	MAX = INT512
-};
-
-enum OperationKind {
+enum ExprKind {
     INVALID = -1,
     CONSTANT = 0,
 
@@ -97,21 +87,26 @@ enum OperationKind {
 
 class Expr {
 public:
-    Expr();
+    Expr(unsigned int bitNumber,uint64_t value);
     virtual ~Expr();
 
-    virtual OperandWidth getWidth() = 0;
-    virtual OperationKind getKind() = 0;
+    Expr(const Expr&) = delete;
+    Expr& operator=(const Expr&) = delete;
 
-    unsigned int hash() { return m_hashValue; }
+    Expr(const Expr&& other) = delete;
+    Expr& operator=(const Expr&& other) = delete;
 
-    virtual bool isConstantOne() { return false; }
-    virtual bool isConstantZero() { return false; }
+    virtual ExprKind getKind() = 0;
+    virtual std::unique_ptr<Expr> clone() = 0;
+
     virtual bool isTrue() { return false; }
     virtual bool isFalse() { return false; }
+    static unsigned int total() { return s_total; }
+public:
+    std::unique_ptr<Expr> leftExpr;
+    std::unique_ptr<Expr> rightExpr;
 protected:
-    unsigned int m_hashValue = 0;
-
+    llvm::APInt m_value;
 private:
     static unsigned int s_total;
 };
