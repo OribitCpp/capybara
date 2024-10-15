@@ -9,6 +9,9 @@ StackFrame::StackFrame(std::vector<std::shared_ptr<InstructionWrapper>>::iterato
 
 StackFrame::StackFrame(const StackFrame& other)
 {
+	caller = other.caller;
+	function = other.function;
+	locals = other.locals;
 }
 
 StackFrame::~StackFrame()

@@ -12,7 +12,7 @@ public:
 	~StackFrame();
 
 public:
-	std::vector<Expr> locals;
+	std::vector<std::shared_ptr<Expr>> locals;
 	std::shared_ptr<FunctionWrapper> function;
 	std::vector<std::shared_ptr<InstructionWrapper>>::iterator caller;
 };

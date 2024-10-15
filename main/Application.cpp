@@ -32,16 +32,9 @@ void Application::ready() {
 
 void Application::execute()
 {
-	while (keepRun)
-	{
-		processInput();
-		update();
-	}
+
 }
 
-bool Application::update() {
-	return true;
-}
 
 void Application::parseConsoleParameters(int argc, char* argv[])
 {
@@ -63,7 +56,6 @@ void Application::processInput()
 
 	if (inputData == "exit")
 	{
-		keepRun = false;
 	}
 	else if (inputData == "help") {
 		std::cout << "All of parameters are displayed as follow:" << std::endl;

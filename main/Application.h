@@ -15,10 +15,8 @@ public:
 	void finish(){}
 	void exit();
 
-	int status() { return m_status; }
-	void setStatus(int value) { m_status = value; }
 protected:
-	virtual bool update();
+	void runAsMain();
 
 private:
 	void parseConsoleParameters(int argc, char* argv[]);
@@ -26,8 +24,6 @@ private:
 private:
 	int argc;
 	char** argv;
-	bool keepRun = true;
-	int m_status = 0;
 
 	std::shared_ptr<llvm::LLVMContext> m_llvmContext;
 	std::unique_ptr<ModuleWrapper> m_moduleStorage;

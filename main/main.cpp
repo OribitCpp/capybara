@@ -7,5 +7,5 @@ int main(int argc, char* argv[]) {
 	app.execute();
 	app.finish();
 	app.exit();
-	return app.status();
+	return 0;
 }

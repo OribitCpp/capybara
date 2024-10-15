@@ -39,7 +39,7 @@ unsigned int ModuleWrapper::getConstantID(llvm::Constant* constant, std::shared_
     }
     unsigned int id = m_constants.size();
     auto instance = std::make_shared<ConstantWrapper>(constant, id, instructionWrapper);
-    m_constantMap.emplace(constant, instructionWrapper);
+    m_constantMap[constant] = instance;
     m_constants.push_back(constant);
     return id;
 }
