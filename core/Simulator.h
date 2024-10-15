@@ -1,7 +1,7 @@
 #ifndef  SIMULATOR_H
 #define SIMULATOR_H
 
-#include "FunctionWrapper.h"
+#include "runtime/FunctionWrapper.h"
 
 class Simulator {
 public:

@@ -31,3 +31,24 @@ std::unique_ptr<llvm::Module> ModuleWrapper::linkModules(std::vector<std::unique
 void ModuleWrapper::optimiseWithPass()
 {
 }
+
+unsigned int ModuleWrapper::getConstantID(llvm::Constant* constant, std::shared_ptr<InstructionWrapper>& instructionWrapper)
+{
+    if (std::shared_ptr<ConstantWrapper> result = getConstant(constant)) {
+        return result->ID;
+    }
+    unsigned int id = m_constants.size();
+    auto instance = std::make_shared<ConstantWrapper>(constant, id, instructionWrapper);
+    m_constantMap.emplace(constant, instructionWrapper);
+    m_constants.push_back(constant);
+    return id;
+}
+
+std::shared_ptr<ConstantWrapper> ModuleWrapper::getConstant(const llvm::Constant* constant)
+{
+    auto iter = m_constantMap.find(constant);
+    if (iter != m_constantMap.end()) {
+        return iter->second;
+    }
+    return std::shared_ptr<ConstantWrapper>();
+}

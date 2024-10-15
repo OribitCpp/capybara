@@ -88,23 +88,15 @@ enum ExprKind {
 class Expr {
 public:
     Expr(unsigned int bitNumber,uint64_t value);
+    Expr(const llvm::APInt& value);
     virtual ~Expr();
 
-    Expr(const Expr&) = delete;
-    Expr& operator=(const Expr&) = delete;
+    virtual ExprKind getKind();
 
-    Expr(const Expr&& other) = delete;
-    Expr& operator=(const Expr&& other) = delete;
-
-    virtual ExprKind getKind() = 0;
-    virtual std::unique_ptr<Expr> clone() = 0;
-
-    virtual bool isTrue() { return false; }
-    virtual bool isFalse() { return false; }
     static unsigned int total() { return s_total; }
 public:
-    std::unique_ptr<Expr> leftExpr;
-    std::unique_ptr<Expr> rightExpr;
+    std::shared_ptr<Expr> leftExpr;
+    std::shared_ptr<Expr> rightExpr;
 protected:
     llvm::APInt m_value;
 private:

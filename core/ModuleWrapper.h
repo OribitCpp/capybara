@@ -8,6 +8,9 @@
 #include <llvm/IR/Module.h>
 #include <llvm/Linker/Linker.h>
 
+#include "runtime/InstructionWrapper.h"
+#include "runtime/ConstantWrapper.h"
+
 class ModuleWrapper {
 public:
 	ModuleWrapper(std::unique_ptr<llvm::Module>& module);
@@ -22,11 +25,13 @@ public:
 	static std::unique_ptr<llvm::Module>  linkModules(std::vector<std::unique_ptr<llvm::Module>>& modules);
 
 	void optimiseWithPass();
-
+	unsigned int getConstantID(llvm::Constant* constant, std::shared_ptr<InstructionWrapper>& instructionWrapper);
+	std::shared_ptr<ConstantWrapper> getConstant(const llvm::Constant* constant);
 private:
 	std::unique_ptr <llvm::Module> m_originModule;
 	std::unique_ptr<llvm::DataLayout> m_targetData;
-
+	std::unordered_map<const llvm::Constant*, std::shared_ptr<ConstantWrapper>> m_constantMap;
+	std::vector<const llvm::Constant*> m_constants;
 };
 
 #endif // ! BCMODULESTORAGE_H
