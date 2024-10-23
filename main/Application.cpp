@@ -3,6 +3,7 @@
 
 #include "ModuleWrapper.h"
 #include "FileLoader.h"
+#include "runtime/ExecutionState.h"
 
 #include <llvm/Support/ManagedStatic.h>
 #include <llvm/Support/TargetSelect.h>
@@ -24,7 +25,6 @@ void Application::ready() {
 	fileLoader.load("D:/capybara/get_sign.bc", modules);
 
 	std::unique_ptr<llvm::Module> finalModule = ModuleWrapper::linkModules(modules);
-	llvm::Function *mainFunc = finalModule->getFunction("main");
 	
 	m_moduleStorage = std::make_unique<ModuleWrapper>(finalModule);
 	m_moduleStorage->optimiseWithPass();
@@ -32,7 +32,8 @@ void Application::ready() {
 
 void Application::execute()
 {
-
+	std::shared_ptr<FunctionWrapper> mainFunc = m_moduleStorage->getFunction("main");
+	ExecutionState executionState(mainFunc);
 }
 
 
