@@ -1,5 +1,5 @@
-#include "ModuleWrapper.ixx"
-#include <iostream>
+module ModuleWrapper;
+import <iostream>
 
 ModuleWrapper::ModuleWrapper(std::unique_ptr<llvm::Module>& module):m_originModule(std::move(module))
 {

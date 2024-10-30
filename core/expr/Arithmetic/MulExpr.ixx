@@ -1,6 +1,6 @@
-export module Core:MulExpr;
+export module Expr.MulExpr;
 
-import :Expr;
+import Expr;
 
 export class MulExpr : public Expr {
 public:

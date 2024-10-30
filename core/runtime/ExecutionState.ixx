@@ -1,4 +1,4 @@
-export module Core:ExecutionState;
+export module ExecutionState;
 import <memory>;
 import <vector>;
 import FunctionWrapper;

@@ -4,7 +4,7 @@ import <memory>;
 import <llvm/IR/Instruction.h>;
 import <llvm/IR/Instructions.h>;
 import InstructionWrapper;
-class ModuleWrapper;
+import ModuleWrapper;
 
 
 export struct FunctionWrapper {

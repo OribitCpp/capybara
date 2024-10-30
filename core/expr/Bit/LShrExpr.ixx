@@ -1,4 +1,4 @@
-export module LShrExpr;
+export module Expr.LShrExpr;
 
 import Expr;
 

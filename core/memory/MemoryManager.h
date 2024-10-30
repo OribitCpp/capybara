@@ -1,10 +1,10 @@
 #ifndef MEMORYMANAGER_H
 #define MEMORYMANAGER_H
 
-#include <memory>
-#include <assert.h>
-#include <stdexcept>
-#include "MemoryBlock.h"
+import <memory>
+import <assert.h>
+import <stdexcept>
+import "MemoryBlock.h"
 
 class MemoryManager {
 	friend class MemoryBlock;

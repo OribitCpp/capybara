@@ -1,6 +1,6 @@
-export module Core:ConstantExpr;
+export module Expr.ConstantExpr;
 
-import :Expr;
+import Expr;
 
 export class ConstantExpr:public Expr {
 public:

@@ -1,4 +1,4 @@
-export module SelectExpr;
+export module Expr.SelectExpr;
 
 import Expr;
 export class SelectExpr: public Expr{

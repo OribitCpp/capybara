@@ -1,4 +1,4 @@
-export module AndExpr;
+export module Expr.AndExpr;
 
 import Expr;
 

@@ -1,4 +1,4 @@
-export module ShlExpr;
+export module Expr.ShlExpr;
 
 import Expr;
 

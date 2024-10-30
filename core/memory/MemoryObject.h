@@ -1,8 +1,8 @@
 #ifndef  MEMORYOBJECT_H
 #define MEMORYOBJECT_H
 
-#include <llvm/IR/Value.h>
-#include <string>
+import <llvm/IR/Value.h>
+import <string>
 
 class MemoryManager;
 

@@ -1,5 +1,5 @@
 
-export module AShrExpr;
+export module Expr.AShrExpr;
 
 import Expr;
 

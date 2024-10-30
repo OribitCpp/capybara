@@ -1,4 +1,4 @@
-#include "RefCounter.h"
+import "RefCounter.h"
 
 RefCounter::RefCounter():m_count(1)
 {

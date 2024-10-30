@@ -1,10 +1,6 @@
-#ifndef  INLINEASM_H
-#define INLINEASM_H
+export module InlineAsm;
 
-
-class InlineAsm {
+export class InlineAsm {
 public:
 	InlineAsm();
 };
-
-#endif // ! ASMCODE_H

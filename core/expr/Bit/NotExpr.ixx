@@ -1,4 +1,4 @@
-export module URemExpr;
+export module Expr.URemExpr;
 
 import Expr;
 

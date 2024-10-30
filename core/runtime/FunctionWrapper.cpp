@@ -1,9 +1,9 @@
 module;
 
-
-module FunctionWrapper;
 import <assert.h>;
-import :ModuleWrapper;
+module FunctionWrapper;
+
+import ModuleWrapper;
 
 FunctionWrapper::FunctionWrapper(llvm::Function* func, std::shared_ptr<ModuleWrapper> moduleWrapper):
 	function(func),

@@ -1,14 +1,14 @@
 #ifndef FILE_LOADER_H
 #define FILE_LOADER_H
 
-#include <filesystem>
-#include <string>
-#include <memory>
-#include <vector>
+import <filesystem>
+import <string>
+import <memory>
+import <vector>
 
-#include <llvm/IR/Module.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/Support/MemoryBuffer.h>
+import <llvm/IR/Module.h>
+import <llvm/IR/LLVMContext.h>
+import <llvm/Support/MemoryBuffer.h>
 
 class FileLoader {
 public:

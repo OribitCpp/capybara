@@ -1,7 +1,7 @@
 #ifndef  REFCOUNTER_H
 #define REFCOUNTER_H
 
-#include <atomic>
+import <atomic>
 class  RefCounter {
 public:
 	RefCounter();

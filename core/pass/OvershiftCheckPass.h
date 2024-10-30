@@ -1,7 +1,7 @@
 #ifndef OVERSHIFTCHECKPASS_H
 #define OVERSHIFTCHECKPASS_H
 
-#include <llvm/Pass.h>
+import <llvm/Pass.h>
 
 class OvershiftCheckPass : public llvm::ModulePass {
 	static char ID;

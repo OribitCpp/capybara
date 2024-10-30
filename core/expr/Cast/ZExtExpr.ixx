@@ -1,6 +1,6 @@
-export module Core:SExtExpr;
+export module Expr.SExtExpr;
 
-import :Expr;
+import Expr;
 
 export class ZExtExpr : public Expr {
 public:

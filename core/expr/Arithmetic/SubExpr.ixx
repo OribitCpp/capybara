@@ -1,4 +1,4 @@
-export module SubExpr;
+export module Expr.SubExpr;
 
 import Expr;
 

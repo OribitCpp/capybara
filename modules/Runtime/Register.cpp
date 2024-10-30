@@ -1,4 +1,4 @@
-#include "Register.h"
+import "Register.h"
 
 Register::Register()
 {

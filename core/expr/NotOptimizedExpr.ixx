@@ -1,6 +1,6 @@
-export module Core:ConcatExpr;
+export module Expr.ConcatExpr;
 
-import :Expr;
+import Expr;
 
 class NotOptimizedExpr:public Expr {
 public:

@@ -1,4 +1,4 @@
-export module ConcatExpr;
+export module Expr.ConcatExpr;
 
 import Expr;
 

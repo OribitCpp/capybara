@@ -16,8 +16,8 @@ public:
         auto now = std::chrono::system_clock::now();
         std::time_t now_time = std::chrono::system_clock::to_time_t(now - std::chrono::hours(24));
 
-        std::ostringstream oss;
-        return oss.str();
+        //std::ostringstream oss;
+        return ;
 	}
 };
 

@@ -1,4 +1,4 @@
-#include "MemoryManager.h"
+import "MemoryManager.h"
 
 MemoryManager::~MemoryManager()
 {

@@ -1,11 +1,11 @@
-#include "FileLoader.h"
-#include "Logger.h"
-#include <llvm/BinaryFormat/Magic.h>
-#include <llvm/Support/SourceMgr.h>
-#include <llvm/IRReader/IRReader.h>
-#include <llvm/Object/ObjectFile.h>
-#include <llvm/Object/Archive.h>
-#include <iostream>
+import "FileLoader.h"
+import "Logger.h"
+import <llvm/BinaryFormat/Magic.h>
+import <llvm/Support/SourceMgr.h>
+import <llvm/IRReader/IRReader.h>
+import <llvm/Object/ObjectFile.h>
+import <llvm/Object/Archive.h>
+import <iostream>
 
 using namespace llvm;
 

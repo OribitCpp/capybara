@@ -1,4 +1,4 @@
-export module Core:ModuleWrapper;
+export module ModuleWrapper;
 
 import <vector>;
 import <memory>;

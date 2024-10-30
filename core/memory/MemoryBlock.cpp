@@ -1,5 +1,5 @@
-#include "MemoryBlock.h"
-#include "MemoryManager.h"
+import "MemoryBlock.h"
+import "MemoryManager.h"
 
 MemoryBlock::MemoryBlock(unsigned int size)
 {

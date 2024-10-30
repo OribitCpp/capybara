@@ -1,4 +1,4 @@
-export module Main:Application;
+export module Application;
 
 
 #import <memory>;

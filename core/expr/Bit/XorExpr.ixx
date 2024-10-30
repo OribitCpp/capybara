@@ -1,4 +1,4 @@
-export module XorExpr;
+export module Expr.XorExpr;
 
 import Expr;
 

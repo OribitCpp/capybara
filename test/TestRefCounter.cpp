@@ -1,6 +1,6 @@
-#include <gtest/gtest.h>
+import <gtest/gtest.h>
 
-#include "RefCounter.h"
+import "RefCounter.h"
 
 
 TEST(RefCounterTest, OneThusand) {

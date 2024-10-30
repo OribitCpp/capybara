@@ -1,4 +1,4 @@
-#include "MemoryObject.h"
+import "MemoryObject.h"
 
 unsigned int  MemoryObject::s_total=0;
 

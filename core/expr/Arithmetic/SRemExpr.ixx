@@ -1,4 +1,4 @@
-export module SRemExpr;
+export module Expr.SRemExpr;
 
 import Expr;
 

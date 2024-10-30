@@ -1,4 +1,4 @@
-export module SDivExpr;
+export module Expr.SDivExpr;
 
 import Expr;
 

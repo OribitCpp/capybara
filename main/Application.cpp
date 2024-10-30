@@ -1,13 +1,14 @@
-#include "Application.h"
-#include <iostream>
+module Application;
 
-#include "ModuleWrapper.h"
-#include "FileLoader.h"
-#include "runtime/ExecutionState.h"
+import <iostream>;
 
-#include <llvm/Support/ManagedStatic.h>
-#include <llvm/Support/TargetSelect.h>
-#include <llvm/IR/Module.h>
+import ModuleWrapper;
+import FileLoader;
+import ExecutionState;
+
+import <llvm/Support/ManagedStatic.h>;
+import <llvm/Support/TargetSelect.h>;
+import <llvm/IR/Module.h>;
 
 Application::Application(int argc, char* argv[])
 {

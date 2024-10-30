@@ -1,8 +1,6 @@
-#ifndef  READEXPR_H
-#define READEXPR_H
+export module Expr.ReadExpr;
 
-class ReadExpr {
+
+export class ReadExpr {
 
 };
-
-#endif // ! READEXPR_H

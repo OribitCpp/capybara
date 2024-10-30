@@ -1,4 +1,4 @@
-export module OrExpr;
+export module Expr.OrExpr;
 
 import Expr;
 
