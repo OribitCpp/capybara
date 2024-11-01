@@ -1,7 +1,8 @@
-export module  Core:ConstantWrapper;
-
 import <llvm/IR/Constant.h>;
 import InstructionWrapper;
+export module  ConstantWrapper;
+
+
 
 
 export struct ConstantWrapper {

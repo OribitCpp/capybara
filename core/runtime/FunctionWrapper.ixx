@@ -4,7 +4,7 @@ import <memory>;
 import <llvm/IR/Instruction.h>;
 import <llvm/IR/Instructions.h>;
 import InstructionWrapper;
-import ModuleWrapper;
+export class ModuleWrapper;
 
 
 export struct FunctionWrapper {
@@ -13,7 +13,7 @@ export struct FunctionWrapper {
 	llvm::StringRef getName() const;
 	llvm::FunctionType* getType() const;
 
-	int getOperandNum(llvm::Value* value, std::unordered_map<llvm::Instruction*, unsigned int>& registerMap, std::shared_ptr<ModuleWrapper> moduleWraper, std::shared_ptr<InstructionWrapper> instructionWrapper);
+	int getOperandNum(llvm::Value* value, std::unordered_map<llvm::Instruction*, unsigned int>& registerMap, std::shared_ptr<ModuleWrapper> moduleWraper, const std::shared_ptr<InstructionWrapper> &instructionWrapper);
 public:
 	llvm::Function* function;
 	unsigned int numArgs;

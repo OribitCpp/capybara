@@ -3,17 +3,18 @@ export module ModuleWrapper;
 import <vector>;
 import <memory>;
 import <string>;
+import <iostream>;
 
 import <llvm/IR/Module.h>;
 import <llvm/Linker/Linker.h>;
 
-class InstructionWrapper;
-class ConstantWrapper;
-class FunctionWrapper;
+export class InstructionWrapper;
+export class ConstantWrapper;
+export class FunctionWrapper;
 
 export class ModuleWrapper:public std::enable_shared_from_this<ModuleWrapper> {
 public:
-	ModuleWrapper(std::unique_ptr<llvm::Module>& module);
+	ModuleWrapper(std::unique_ptr<llvm::Module>& llvmModule);
 	~ModuleWrapper() {}
 
 	ModuleWrapper(const ModuleWrapper&) = delete;
@@ -25,7 +26,7 @@ public:
 	static std::unique_ptr<llvm::Module>  linkModules(std::vector<std::unique_ptr<llvm::Module>>& modules);
 
 	void optimiseWithPass();
-	unsigned int getConstantID(llvm::Constant* constant, std::shared_ptr<InstructionWrapper>& instructionWrapper);
+	unsigned int getConstantID(llvm::Constant* constant,const std::shared_ptr<InstructionWrapper>& instructionWrapper);
 	std::shared_ptr<ConstantWrapper> getConstant(const llvm::Constant* constant);
 	std::shared_ptr<FunctionWrapper> getFunction(std::string name);
 private:

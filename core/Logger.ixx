@@ -5,7 +5,7 @@ import <spdlog/common.h>;
 import <spdlog/sinks/basic_file_sink.h>;
 import <spdlog/sinks/stdout_color_sinks.h>;
 import <memory>;
-import Timer;
+import Core.Timer;
 
 
 export class Logger {

@@ -4,7 +4,8 @@ import <llvm/IR/Instruction.h>;
 import <llvm/IR/Instructions.h>;
 import <vector>;
 
-export struct InstructionWrapper {
+export class InstructionWrapper {
+public:
 	llvm::Instruction* instruction = nullptr;
 	unsigned int dest = 0;
 	uint64_t offset = 0;

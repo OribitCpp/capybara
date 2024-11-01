@@ -1,4 +1,4 @@
-export module Core:Timer;
+export module Core.Timer;
 
 import <ctime>;
 import <chrono>;
@@ -17,7 +17,7 @@ public:
         std::time_t now_time = std::chrono::system_clock::to_time_t(now - std::chrono::hours(24));
 
         //std::ostringstream oss;
-        return ;
+        return {};
 	}
 };
 

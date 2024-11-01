@@ -1,7 +1,15 @@
-file(GLOB MAIN_H "*.h")
+file(GLOB MAIN_H "*.ixx")
 file(GLOB MAIN_CPP "*.cpp")
 
-add_executable(${PROJECT_NAME} ${MAIN_H} ${MAIN_CPP} )
+
+add_executable(${PROJECT_NAME} main.cpp)
+
+target_sources(${PROJECT_NAME}
+		PUBLIC
+		FILE_SET CXX_MODULES FILES
+		${MAIN_H}
+		${MAIN_CPP}
+)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC  ${LLVM_LIBRARIES}  Core FileManager)
 

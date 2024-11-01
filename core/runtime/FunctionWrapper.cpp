@@ -1,9 +1,8 @@
 module;
-
 import <assert.h>;
+import ModuleWrapper;
 module FunctionWrapper;
 
-import ModuleWrapper;
 
 FunctionWrapper::FunctionWrapper(llvm::Function* func, std::shared_ptr<ModuleWrapper> moduleWrapper):
 	function(func),
@@ -72,7 +71,7 @@ llvm::FunctionType* FunctionWrapper::getType() const
 	return function->getFunctionType();
 }
 
-int FunctionWrapper::getOperandNum(llvm::Value* value, std::unordered_map<llvm::Instruction*, unsigned int>& registerMap, std::shared_ptr<ModuleWrapper> moduleWraper, std::shared_ptr<InstructionWrapper> instructionWrapper)
+int FunctionWrapper::getOperandNum(llvm::Value* value, std::unordered_map<llvm::Instruction*, unsigned int>& registerMap, std::shared_ptr<ModuleWrapper> moduleWraper, const std::shared_ptr<InstructionWrapper> &instructionWrapper)
 {
 	if (llvm::Instruction* inst = dyn_cast<llvm::Instruction>(value)) {
 		return registerMap[inst];

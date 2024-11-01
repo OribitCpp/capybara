@@ -1,7 +1,9 @@
 module ModuleWrapper;
-import <iostream>
+import FunctionWrapper;
+import ConstantWrapper;
 
-ModuleWrapper::ModuleWrapper(std::unique_ptr<llvm::Module>& module):m_originModule(std::move(module))
+
+ModuleWrapper::ModuleWrapper(std::unique_ptr<llvm::Module>& llvmModule):m_originModule(std::move(llvmModule))
 {
     m_targetData = std::make_unique<llvm::DataLayout>(m_originModule.get());
 }
@@ -32,7 +34,7 @@ void ModuleWrapper::optimiseWithPass()
 {
 }
 
-unsigned int ModuleWrapper::getConstantID(llvm::Constant* constant, std::shared_ptr<InstructionWrapper>& instructionWrapper)
+unsigned int ModuleWrapper::getConstantID(llvm::Constant* constant,const std::shared_ptr<InstructionWrapper>& instructionWrapper)
 {
     if (std::shared_ptr<ConstantWrapper> result = getConstant(constant)) {
         return result->ID;

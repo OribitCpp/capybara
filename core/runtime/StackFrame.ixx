@@ -1,6 +1,7 @@
 export module  StackFrame;
 
 import <vector>;
+import <memory>;
 import Expr;
 
 import InstructionWrapper;
