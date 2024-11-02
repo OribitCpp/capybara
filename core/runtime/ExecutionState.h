@@ -2,14 +2,13 @@
 #define EXECUTIONSTATE_H
 
 #include "FunctionWrapper.h"
-#include "MemoryManager.h"
 #include "StackFrame.h"
 #include <memory>
 #include <vector>
 
 class ExecutionState  {
 public:
-	ExecutionState(std::shared_ptr<FunctionWrapper> &func, std::shared_ptr<MemoryManager> &memoryManager);
+	ExecutionState(std::shared_ptr<FunctionWrapper> &func);
 	ExecutionState& operator=(const ExecutionState&) = delete;
 	ExecutionState(ExecutionState&&) = delete;
 	ExecutionState& operator=(ExecutionState&&) = delete;

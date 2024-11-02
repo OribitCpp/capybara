@@ -1,7 +1,9 @@
 #include "ExecutionState.h"
+#include "memory/MemoryManager.h"
+
 unsigned int ExecutionState::s_total = 0;
 
-ExecutionState::ExecutionState(std::shared_ptr<FunctionWrapper>& func, std::shared_ptr<MemoryManager>& memoryManager):
+ExecutionState::ExecutionState(std::shared_ptr<FunctionWrapper>& func):
 	PC(func->instructions.begin()),
 	prevPC(PC)
 {

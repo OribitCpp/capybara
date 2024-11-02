@@ -22,6 +22,7 @@ void Application::ready() {
 	std::vector<std::unique_ptr<llvm::Module>> modules;
 	FileLoader fileLoader(*m_llvmContext);
 	fileLoader.load("D:/capybara/get_sign.bc", modules);
+	Logger::info("loaded D:/capybara/get_sign.bc");
 
 	std::unique_ptr<llvm::Module> finalModule = ModuleWrapper::linkModules(modules);
 	llvm::Function *mainFunc = finalModule->getFunction("main");
