@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(LLVM CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
+find_package(z3 CONFIG REQUIRED)
 
 llvm_map_components_to_libnames(LLVM_LIBRARIES support core irreader object linker	mcjit
 )
