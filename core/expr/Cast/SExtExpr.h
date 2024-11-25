@@ -5,7 +5,7 @@
 
 class SExtExpr: public Expr {
 public:
-	SExtExpr(const std::shared_ptr<Expr>& base, unsigned int width);
+	SExtExpr(const std::shared_ptr<Expr>& base, uint64_t width);
 	virtual ExprKind getKind() override;
 
 };

@@ -8,7 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 find_package(LLVM CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 
-llvm_map_components_to_libnames(LLVM_LIBRARIES support core irreader object linker)
+llvm_map_components_to_libnames(LLVM_LIBRARIES support core irreader object linker	mcjit
+)
 message(STATUS "LLVM_LIBRARIES: ${LLVM_LIBRARIES}")
 
 include_directories(${LLVM_INCLUDE_DIRS})

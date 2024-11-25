@@ -1,7 +1,7 @@
 #include "ExtractExpr.h"
 
 
-ExtractExpr::ExtractExpr(const std::shared_ptr<Expr>& baseExpr, unsigned int start, unsigned offset): 
+ExtractExpr::ExtractExpr(const std::shared_ptr<Expr>& baseExpr, uint64_t start, uint64_t offset):
 	Expr(start, offset)
 {
 	rightExpr = baseExpr;

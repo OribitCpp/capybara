@@ -7,6 +7,7 @@ class ConstantExpr:public Expr {
 public:
 	ConstantExpr(unsigned int bitNumber, uint64_t value);
 	ConstantExpr(const llvm::APInt& value);
+	static std::shared_ptr<ConstantExpr> createPointer(uint64_t value);
 
 	virtual ExprKind getKind() override;
 
@@ -41,7 +42,14 @@ public:
 
 	std::shared_ptr<ConstantExpr> Neg();
 	std::shared_ptr<ConstantExpr> Not();
-private:
+
+	uint64_t getLimitedValue(uint64_t limit = UINT64_MAX) const;
+	bool isZero() const;
+	bool isOne() const;
+	bool isTrue() const;
+	bool isFalse() const;
+	uint64_t getZExtValue(uint32_t bits = 64) const;
+	const llvm::APInt& getAPValue() const { return m_value; }
 };
 
 

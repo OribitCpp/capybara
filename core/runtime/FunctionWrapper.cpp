@@ -1,5 +1,5 @@
 #include "FunctionWrapper.h"
-
+#include <llvm/IR/Constants.h>
 using namespace llvm;
 
 FunctionWrapper::FunctionWrapper(Function* func, std::shared_ptr<ModuleWrapper> moduleWrapper):
@@ -72,7 +72,7 @@ llvm::FunctionType* FunctionWrapper::getType() const
 	return function->getFunctionType();
 }
 
-int FunctionWrapper::getOperandNum(Value* value, std::unordered_map<Instruction*, unsigned int>& registerMap, std::shared_ptr<ModuleWrapper> moduleWraper, std::shared_ptr<InstructionWrapper> instructionWrapper)
+int FunctionWrapper::getOperandNum(Value* value, std::unordered_map<Instruction*, uint32_t>& registerMap, std::shared_ptr<ModuleWrapper> moduleWraper, std::shared_ptr<InstructionWrapper> instructionWrapper)
 {
 	if (Instruction* inst = dyn_cast<Instruction>(value)) {
 		return registerMap[inst];
@@ -86,5 +86,29 @@ int FunctionWrapper::getOperandNum(Value* value, std::unordered_map<Instruction*
 		assert(isa<Constant>(value));
 		Constant* constant = cast<Constant>(value);
 		return -(moduleWraper->getConstantID(constant, instructionWrapper) + 2);
+	}
+}
+
+llvm::Function* FunctionWrapper::getTargetFunction(llvm::Value* calledVal)
+{
+	SmallPtrSet<const GlobalValue*, 3> Visited;
+
+	Constant* c = dyn_cast<Constant>(calledVal);
+	if (!c)	return nullptr;
+
+	while (true) {
+		if (GlobalValue* gv = dyn_cast<GlobalValue>(c)) {
+			if (!Visited.insert(gv).second)	return nullptr;
+
+			if (Function* f = dyn_cast<Function>(gv))	return f;
+			else if (GlobalAlias* ga = dyn_cast<GlobalAlias>(gv))	c = ga->getAliasee();
+			else	return nullptr;
+		}
+		else if (llvm::ConstantExpr* ce = dyn_cast<llvm::ConstantExpr>(c)) {
+			if (ce->getOpcode() == Instruction::BitCast)
+				c = ce->getOperand(0);
+			else	return nullptr;
+		}
+		else	return nullptr;
 	}
 }

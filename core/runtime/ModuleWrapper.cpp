@@ -1,5 +1,6 @@
 #include "ModuleWrapper.h"
-#include <iostream>
+#include "runtime/FunctionWrapper.h"
+#include "Logger.h"
 
 ModuleWrapper::ModuleWrapper(std::unique_ptr<llvm::Module>& module):m_originModule(std::move(module))
 {
@@ -10,7 +11,7 @@ bool ModuleWrapper::linkTwoModule(llvm::Module& dest, std::unique_ptr<llvm::Modu
 {
     std::string identifier = src->getModuleIdentifier();
     bool result = llvm::Linker::linkModules(dest, std::move(src));
-    if (!result)  std::cerr << "failed to load module:  "<< identifier;
+    if (!result)  Logger::error("failed to load module:  ", identifier);
     return result;
 }
 
@@ -51,4 +52,48 @@ std::shared_ptr<ConstantWrapper> ModuleWrapper::getConstant(const llvm::Constant
         return iter->second;
     }
     return std::shared_ptr<ConstantWrapper>();
+}
+
+std::shared_ptr<FunctionWrapper> ModuleWrapper::getFunction(const std::string& name)
+{
+    if (m_functionMap.find(name) != m_functionMap.end()) {
+        return m_functionMap[name];
+    }
+    llvm::Function* function = m_originModule->getFunction(name);
+    if (function != nullptr) {
+        std::shared_ptr<FunctionWrapper> funcWapper = std::make_shared<FunctionWrapper>(function, shared_from_this());
+        m_functionMap[name] = funcWapper;
+        return funcWapper;
+    }
+    return nullptr;
+}
+
+std::shared_ptr<FunctionWrapper> ModuleWrapper::getFunction(const llvm::Function* func)
+{
+    return getFunction(func->getName().str());
+}
+
+llvm::Module* ModuleWrapper::getOriginPtr()
+{
+    return m_originModule.get();
+}
+
+std::uint64_t ModuleWrapper::getTypeSize(llvm::Type *type)
+{
+    return m_targetData->getTypeStoreSize(type);
+}
+
+std::uint64_t ModuleWrapper::getTypeSizeInBits(llvm::Type* type)
+{
+    return m_targetData->getTypeSizeInBits(type);
+}
+
+llvm::TypeSize ModuleWrapper::getTypeAllocSize(llvm::Type* type)
+{
+    return m_targetData->getTypeAllocSize(type);
+}
+
+const llvm::StructLayout* ModuleWrapper::getStructLayout(llvm::StructType* type)
+{
+    return m_targetData->getStructLayout(type);
 }

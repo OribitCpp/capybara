@@ -5,7 +5,7 @@
 
 class ExtractExpr : public Expr {
 public:
-	ExtractExpr(const std::shared_ptr<Expr>&baseExpr, unsigned int start, unsigned int offset);
+	ExtractExpr(const std::shared_ptr<Expr>&baseExpr, uint64_t start, uint64_t offset);
 	~ExtractExpr();
 	virtual ExprKind getKind() override;
 private:

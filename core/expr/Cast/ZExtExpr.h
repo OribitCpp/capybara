@@ -5,7 +5,7 @@
 
 class ZExtExpr : public Expr {
 public:
-	ZExtExpr(const std::shared_ptr<Expr>& base, unsigned int width);
+	ZExtExpr(const std::shared_ptr<Expr>& base, uint64_t width);
 	virtual ExprKind getKind() override;
 
 };

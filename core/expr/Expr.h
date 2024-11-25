@@ -2,7 +2,9 @@
 #define EXPR_H
 
 #include <llvm/ADT/APInt.h>
+#include <llvm/ADT/APFloat.h>
 #include <memory>
+#include <llvm/Support/raw_ostream.h>
 
 //   -1 =  minus expr + constant expr
 
@@ -93,15 +95,34 @@ public:
 
     virtual ExprKind getKind();
 
-    static unsigned int total() { return s_total; }
+    static uint64_t total() { return s_total; }
+    uint64_t getWidth() const;
+
+    uint64_t hash() const { return m_hashValue; }
+    static std::shared_ptr<Expr>createIsZero(std::shared_ptr<Expr> expr);
+    //virtual uint64_t computeHash() = 0;
+    static const llvm::fltSemantics* fpWidthToSemantics(uint32_t width);
+    static uint32_t getMinBytesForWidth(uint32_t width) { return (width + 7) / 8; }
+
+    bool operator==(const Expr& other) const;
+    friend llvm::raw_ostream& operator<<(llvm::raw_ostream& os, const Expr& expr);
 public:
     std::shared_ptr<Expr> leftExpr;
     std::shared_ptr<Expr> rightExpr;
 protected:
     llvm::APInt m_value;
 private:
-    static unsigned int s_total;
+    static uint64_t s_total;
+    uint64_t m_hashValue = 0;
 };
+
+
+template<typename T>
+llvm::raw_ostream& operator<<(llvm::raw_ostream& os, const std::shared_ptr<T>& expr) {
+    os << *expr;
+    return os;
+}
+
 
 
 #endif // ! EXPR_H

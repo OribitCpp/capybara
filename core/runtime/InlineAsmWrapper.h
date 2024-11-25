@@ -2,9 +2,9 @@
 #define INLINEASM_H
 
 
-class InlineAsm {
+class InlineAsmWrapper {
 public:
-	InlineAsm();
+	InlineAsmWrapper();
 };
 
 #endif // ! ASMCODE_H

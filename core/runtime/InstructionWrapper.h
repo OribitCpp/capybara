@@ -11,6 +11,12 @@ struct InstructionWrapper {
 	uint64_t offset = 0;
 	std::vector<int> operands;
 	std::vector<std::pair<unsigned int, uint64_t>> indices;
+	uint32_t line = 0;
+	uint32_t column = 0;
+	uint32_t assemblyLine = 0;
+	std::string file;
+	std::string sourceLocation() const;
+	uint32_t getOpcode() const;
 };
 
 #endif

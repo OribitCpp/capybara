@@ -2,6 +2,7 @@
 #define CONCATEXPR_H
 
 #include "Expr.h"
+#include <vector>
 
 class ConcatExpr : public Expr {
 public:
@@ -9,6 +10,7 @@ public:
 
 
 	virtual ExprKind getKind() override;
+	static std::shared_ptr<Expr> concat(const std::vector<std::shared_ptr<Expr>> &exprs);
 };
 
 

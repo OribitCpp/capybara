@@ -1,4 +1,5 @@
 #include "ConstantExpr.h"
+#include "Logger.h"
 
 ConstantExpr::ConstantExpr(unsigned int bitNumber, uint64_t value):Expr(bitNumber,value){
 }
@@ -161,5 +162,44 @@ std::shared_ptr<ConstantExpr> ConstantExpr::Neg()
 std::shared_ptr<ConstantExpr> ConstantExpr::Not()
 {
 	return std::make_shared<ConstantExpr>(~m_value);
+}
+
+uint64_t ConstantExpr::getLimitedValue(uint64_t limit) const
+{
+	return m_value.getLimitedValue(limit);
+}
+
+bool ConstantExpr::isZero() const
+{
+	return m_value.isMinValue();
+}
+
+bool ConstantExpr::isOne() const
+{
+	return getLimitedValue() == 1;
+}
+
+bool ConstantExpr::isTrue() const
+{
+	return getWidth() ==  1 && m_value.getBoolValue() == true;
+}
+
+bool ConstantExpr::isFalse() const
+{
+	return getWidth() == 1 && m_value.getBoolValue() == false;
+}
+
+uint64_t ConstantExpr::getZExtValue(uint32_t bits) const
+{
+	if (getWidth() <= bits) {
+		Logger::error("Value may be out of range!");
+		assert(0);
+	}
+	return m_value.getZExtValue();
+}
+
+std::shared_ptr<ConstantExpr> ConstantExpr::createPointer(uint64_t value)
+{
+	return std::make_shared<ConstantExpr>(sizeof(void*),value);
 }
 

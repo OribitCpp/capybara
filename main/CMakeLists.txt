@@ -3,7 +3,7 @@ file(GLOB MAIN_CPP "*.cpp")
 
 add_executable(${PROJECT_NAME} ${MAIN_H} ${MAIN_CPP} )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC  ${LLVM_LIBRARIES}  Core FileManager)
+target_link_libraries(${PROJECT_NAME} PUBLIC  ${LLVM_LIBRARIES}  Core FileManager Solver)
 
 
 if(WIN32)
