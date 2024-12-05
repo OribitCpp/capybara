@@ -17,6 +17,7 @@ public:
 	std::shared_ptr<FunctionWrapper> function;
 	std::vector<std::shared_ptr<InstructionWrapper>>::iterator caller;
 	std::shared_ptr<MemoryObject> varargs;
+	std::vector<std::shared_ptr<MemoryObject>> allocas;
 };
 
 #endif // ! STACKFRAME_H

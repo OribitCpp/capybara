@@ -124,7 +124,7 @@ void Application::allocateGlobalObjects(std::shared_ptr<ExecutionState>& state)
 			std::shared_ptr<MemoryObject> object = MemoryManager::alloc(8);
 			object->isLocal = false;
 			object->isGlobal = true;
-			state->saveInAllocator(object, object->isLocal);
+			state->saveInAllocator(object);
 			address = ConstantExpr::createPointer(object->address);
 			m_legalFunctions.emplace(object->address, &func);
 		}
@@ -1677,6 +1677,13 @@ void Application::terminateStateOnProgramError(std::shared_ptr<ExecutionState>& 
     terminateStateOnError(state, message, reason);
 }
 
+void Application::terminateStateOnSolverError(std::shared_ptr<ExecutionState>& state, const std::string& message)
+{
+    ++StatisticManager::terminationSolverError;
+    terminateStateOnError(state, message, StateTerminationType::Solver);
+
+}
+
 void Application::terminateStateOnError(std::shared_ptr<ExecutionState>& state, const std::string& message, StateTerminationType terminationType)
 {
     static std::set< std::pair<llvm::Instruction*, std::string> > emittedErrors;
@@ -1728,7 +1735,54 @@ void Application::transferToBasicBlock(llvm::BasicBlock* dst, llvm::BasicBlock* 
 
 std::pair< std::shared_ptr<ExecutionState>, std::shared_ptr<ExecutionState>> Application::fork(std::shared_ptr<ExecutionState>& currentState,const std::shared_ptr<Expr>& condition, bool isInternal, BranchType type)
 {
-    return { nullptr,nullptr };
+    SolverValidity res;
+    //m_solverManager.setTimeout(time::Span());
+    bool success = m_solverManager.evaluate(currentState->constraints, condition, res, currentState->duraion);
+    if (!success) {
+        currentState->PC = currentState->prevPC;
+        terminateStateOnSolverError(currentState, "Query timed out (fork).");
+        return { nullptr, nullptr };
+    }
+
+    if (res == SolverValidity::Unknown) {
+        Logger::error("fork solver return unknow");
+        return { nullptr,nullptr };
+    }
+
+    // XXX - even if the constraint is provable one way or the other we
+    // can probably benefit by adding this constraint and allowing it to
+    // reduce the other constraints. For example, if we do a binary
+    // search on a particular value, and then see a comparison against
+    // the value it has been fixed at, we should take this as a nice
+    // hint to just use the single constraint instead of all the binary
+    // search ones. If that makes sense.
+    if (res == SolverValidity::True)  return { currentState, nullptr };
+    else if (res == SolverValidity::False)  return { nullptr, currentState };
+    else {
+        //TimerStatIncrementer timer(stats::forkTime);
+        std::shared_ptr<ExecutionState> falseState, trueState = currentState;
+
+        ++StatisticManager::forks;
+
+        falseState = trueState->branch();
+        m_statesSet.insert(falseState);
+
+  
+        //executionTree->attach(current.executionTreeNode, falseState, trueState, reason);
+        //stats::incBranchStat(reason, 1);
+
+        trueState->addConstraint(condition);
+        falseState->addConstraint(Expr::createIsZero(condition));
+
+        // Kinda gross, do we even really still want this option?
+        if (MaxDepth && MaxDepth <= trueState->depth) {
+            terminateStateEarly(trueState, "max-depth exceeded.", StateTerminationType::MaxDepth);
+            terminateStateEarly(falseState, "max-depth exceeded.", StateTerminationType::MaxDepth);
+            return { nullptr, nullptr };
+        }
+
+        return { trueState, falseState };
+    }
 }
 
 std::shared_ptr<Expr> Application::toUnique(std::shared_ptr<ExecutionState>& currentState, std::shared_ptr<Expr> expr)
@@ -2101,7 +2155,7 @@ void Application::executeCall(std::shared_ptr<ExecutionState>& state, const std:
                     Logger::warn("While allocating varargs: malloc did not align to 16 bytes.");
                 }
 
-                //ObjectState* os = bindObjectInState(state, mo, true);
+                std::shared_ptr<ObjectState> os = state->bindObjectInState(mo);
 
                 //for (unsigned k = funcArgs; k < callingArgs; k++) {
                 //    if (!cb.isByValArgument(k)) {
@@ -2130,126 +2184,115 @@ void Application::executeCall(std::shared_ptr<ExecutionState>& state, const std:
 void Application::executeAlloc(std::shared_ptr<ExecutionState>& state, std::shared_ptr<Expr> size, bool isLocal, std::shared_ptr<InstructionWrapper> target, bool zeroMemory, const std::shared_ptr<ObjectState>& reallocFrom, size_t allocationAlignment)
 {
     size = toUnique(state, size);
-    //if (std::shared_ptr<ConstantExpr> CE = std::dynamic_pointer_cast<ConstantExpr>(size)) {
-    //    const llvm::Value* allocSite = (*state->prevPC)->instruction;
-    //    if (allocationAlignment == 0) {
-    //        allocationAlignment = getAllocationAlignment(allocSite);
-    //    }
-    //    MemoryObject* mo =
-    //        memory->allocate(CE->getZExtValue(), isLocal, /*isGlobal=*/false,
-    //            &state, allocSite, allocationAlignment);
-    //    if (!mo) {
-    //        state->bindLocal(target,std::make_shared<ConstantExpr>(llvm::APInt(sizeof(void*),0)));
-    //    }
-    //    else {
-    //        ObjectState* os = bindObjectInState(state, mo, isLocal);
-    //        if (zeroMemory) {
-    //            os->initializeToZero();
-    //        }
-    //        else {
-    //            os->initializeToRandom();
-    //        }
-    //        bindLocal(target, state, mo->getBaseExpr());
+    if (std::shared_ptr<ConstantExpr> CE = std::dynamic_pointer_cast<ConstantExpr>(size)) {
+        const llvm::Value* allocSite = (*state->prevPC)->instruction;
+        if (allocationAlignment == 0) {
+            allocationAlignment = getAllocationAlignment(allocSite);
+        }
+        std::shared_ptr<MemoryObject> mo = std::make_shared<MemoryObject>(CE->getZExtValue());
+        mo->isLocal = isLocal;
+        mo->allocSite = allocSite;
+        mo->alignment = allocationAlignment;
+        state->saveInAllocator(mo);
+        if (!mo) {
+            state->bindLocal(target,std::make_shared<ConstantExpr>(llvm::APInt(sizeof(void*),0)));
+        }
+        else {
+            std::shared_ptr<ObjectState> os = state->bindObjectInState(mo);
+            if (zeroMemory) {
+                os->initializeToZero();
+            }
+            else {
+                os->initializeToRandom();
+            }
+            state->bindLocal(target, mo->getBaseExpr());
 
-    //        if (reallocFrom) {
-    //            unsigned count = std::min(reallocFrom->size, os->size);
-    //            for (unsigned i = 0; i < count; i++)
-    //                os->write(i, reallocFrom->read8(i));
-    //            const MemoryObject* reallocObject = reallocFrom->getObject();
-    //            state.deallocate(reallocObject);
-    //            state.addressSpace.unbindObject(reallocObject);
-    //        }
-    //    }
-    //}
-    //else {
-    //    // XXX For now we just pick a size. Ideally we would support
-    //    // symbolic sizes fully but even if we don't it would be better to
-    //    // "smartly" pick a value, for example we could fork and pick the
-    //    // min and max values and perhaps some intermediate (reasonable
-    //    // value).
-    //    // 
-    //    // It would also be nice to recognize the case when size has
-    //    // exactly two values and just fork (but we need to get rid of
-    //    // return argument first). This shows up in pcre when llvm
-    //    // collapses the size expression with a select.
+            if (reallocFrom) {
+                unsigned count = std::min(reallocFrom->getSize(), os->getSize());
+                for (unsigned i = 0; i < count; i++)
+                    os->write(i, reallocFrom->read8(i));
+                const std::shared_ptr<MemoryObject> reallocObject = reallocFrom->getMemoryObject();
+                state->remove(reallocObject);
+                state->bindObjectInState(reallocObject);
+            }
+        }
+    }
+    else {
+        // XXX For now we just pick a size. Ideally we would support
+        // symbolic sizes fully but even if we don't it would be better to
+        // "smartly" pick a value, for example we could fork and pick the
+        // min and max values and perhaps some intermediate (reasonable
+        // value).
+        // 
+        // It would also be nice to recognize the case when size has
+        // exactly two values and just fork (but we need to get rid of
+        // return argument first). This shows up in pcre when llvm
+        // collapses the size expression with a select.
 
-    //    size = optimizer.optimizeExpr(size, true);
+        size = m_exprOptimizer.optimizeExpr(size, true);
 
-    //    // Check if in seed mode, then try to replicate size from a seed
-    //    ref<ConstantExpr> example = getValueFromSeeds(state, size);
-    //    if (!example) {
-    //        bool success = solver->getValue(state.constraints, size, example,
-    //            state.queryMetaData);
-    //        assert(success && "FIXME: Unhandled solver failure");
-    //        (void)success;
+        // Check if in seed mode, then try to replicate size from a seed
+        //std::shared_ptr<ConstantExpr> example = getValueFromSeeds(state, size);
+        //if (!example) {
+        //    bool success = m_solverManager.getValue(state->constraints, size, example,
+        //        state->duraion);
+        //    assert(success && "FIXME: Unhandled solver failure");
+        //    (void)success;
 
-    //        // Try and start with a small example.
-    //        Expr::Width W = example->getWidth();
-    //        while (example->Ugt(ConstantExpr::alloc(128, W))->isTrue()) {
-    //            ref<ConstantExpr> tmp = example->LShr(ConstantExpr::alloc(1, W));
-    //            bool res;
-    //            [[maybe_unused]] bool success =
-    //                solver->mayBeTrue(state.constraints, EqExpr::create(tmp, size), res,
-    //                    state.queryMetaData);
-    //            assert(success && "FIXME: Unhandled solver failure");
-    //            if (!res)
-    //                break;
-    //            example = tmp;
-    //        }
-    //    }
+        //    // Try and start with a small example.
+        //    uint64_t W = example->getWidth();
+        //    while (example->Ugt(std::make_shared<ConstantExpr>(W,128))->isTrue()) {
+        //        std::shared_ptr<ConstantExpr> tmp = example->LShr(std::make_shared < ConstantExpr>(W,1));
+        //        bool res;
+        //        bool success = m_solverManager.mayBeTrue(state->constraints, std::make_shared < EqExpr>(tmp, size), res,
+        //                state->duraion);
+        //        assert(success && "FIXME: Unhandled solver failure");
+        //        if (!res)
+        //            break;
+        //        example = tmp;
+        //    }
+        //}
 
-    //    StatePair fixedSize =
-    //        fork(state, EqExpr::create(example, size), true, BranchType::Alloc);
+        //auto fixedSize = fork(state, std::make_shared<EqExpr>(example, size), true, BranchType::Alloc);
 
-    //    if (fixedSize.second) {
-    //        // Check for exactly two values
-    //        ref<ConstantExpr> tmp;
-    //        bool success = solver->getValue(fixedSize.second->constraints, size, tmp,
-    //            fixedSize.second->queryMetaData);
-    //        assert(success && "FIXME: Unhandled solver failure");
-    //        (void)success;
-    //        bool res;
-    //        success = solver->mustBeTrue(fixedSize.second->constraints,
-    //            EqExpr::create(tmp, size), res,
-    //            fixedSize.second->queryMetaData);
-    //        assert(success && "FIXME: Unhandled solver failure");
-    //        (void)success;
-    //        if (res) {
-    //            executeAlloc(*fixedSize.second, tmp, isLocal,
-    //                target, zeroMemory, reallocFrom);
-    //        }
-    //        else {
-    //            // See if a *really* big value is possible. If so assume
-    //            // malloc will fail for it, so lets fork and return 0.
-    //            StatePair hugeSize =
-    //                fork(*fixedSize.second,
-    //                    UltExpr::create(
-    //                        ConstantExpr::alloc(1U << 31, example->getWidth()), size),
-    //                    true, BranchType::Alloc);
-    //            if (hugeSize.first) {
-    //                klee_message("NOTE: found huge malloc, returning 0");
-    //                bindLocal(target, *hugeSize.first,
-    //                    ConstantExpr::alloc(0, Context::get().getPointerWidth()));
-    //            }
+        //if (fixedSize.second) {
+        //    // Check for exactly two values
+        //    std::shared_ptr<ConstantExpr> tmp;
+        //    bool success = m_solverManager.getValue(fixedSize.second->constraints, size, tmp, fixedSize.second->duraion);
+        //    assert(success && "FIXME: Unhandled solver failure");
+        //    (void)success;
+        //    bool res;
+        //    success = m_solverManager.mustBeTrue(fixedSize.second->constraints, std::make_shared<EqExpr>(tmp, size), res, fixedSize.second->duraion);
+        //    assert(success && "FIXME: Unhandled solver failure");
+        //    (void)success;
+        //    if (res) {
+        //        executeAlloc(fixedSize.second, tmp, isLocal, target, zeroMemory, reallocFrom);
+        //    }
+        //    else {
+        //        // See if a *really* big value is possible. If so assume
+        //        // malloc will fail for it, so lets fork and return 0.
+        //        std::shared_ptr<ConstantExpr> constExpr = std::make_shared<ConstantExpr>(example->getWidth(), 1U << 31);
+        //        auto hugeSize = fork(fixedSize.second, std::make_shared < UltExpr>(constExpr, size), true, BranchType::Alloc);
+        //        if (hugeSize.first) {
+        //            Logger::warn("NOTE: found huge malloc, returning 0");
+        //            hugeSize.first->bindLocal(target, std::make_shared<ConstantExpr>(sizeof(void*),0));
+        //        }
 
-    //            if (hugeSize.second) {
+        //        if (hugeSize.second) {
 
-    //                std::string Str;
-    //                llvm::raw_string_ostream info(Str);
-    //                ExprPPrinter::printOne(info, "  size expr", size);
-    //                info << "  concretization : " << example << "\n";
-    //                info << "  unbound example: " << tmp << "\n";
-    //                terminateStateOnProgramError(*hugeSize.second,
-    //                    "concretized symbolic size",
-    //                    StateTerminationType::Model, info.str());
-    //            }
-    //        }
-    //    }
+        //            std::string Str;
+        //            llvm::raw_string_ostream info(Str);
+        //            //ExprPPrinter::printOne(info, "  size expr", size);
+        //            info << "  concretization : " << example << "\n";
+        //            info << "  unbound example: " << tmp << "\n";
+        //            terminateStateOnProgramError(hugeSize.second, "concretized symbolic size" + info.str(),  StateTerminationType::Model);
+        //        }
+        //    }
+        //}
 
-    //    if (fixedSize.first) // can be zero when fork fails
-    //        executeAlloc(*fixedSize.first, example, isLocal,
-    //            target, zeroMemory, reallocFrom);
-    //}
+        //if (fixedSize.first) // can be zero when fork fails
+        //    executeAlloc(fixedSize.first, example, isLocal, target, zeroMemory, reallocFrom);
+    }
 }
 
 std::shared_ptr<InstructionWrapper> Application::getLastNonKleeInternalInstruction(const std::shared_ptr<ExecutionState>& state, std::shared_ptr<InstructionWrapper>& lastInstruction)
@@ -2868,6 +2911,64 @@ void Application::callExternalFunction(std::shared_ptr<ExecutionState>& state, s
 //            ConstantExpr::fromMemory((void*)args, getWidthForLLVMType(resultType));
 //        bindLocal(target, state, e);
 //    }
+}
+
+uint64_t Application::getAllocationAlignment(const llvm::Value* allocSite) const
+{
+    // FIXME: 8 was the previous default. We shouldn't hard code this
+ // and should fetch the default from elsewhere.
+    const size_t forcedAlignment = 8;
+    size_t alignment = 0;
+    llvm::Type* type = NULL;
+    std::string allocationSiteName(allocSite->getName().str());
+    if (const llvm::GlobalObject* GO = llvm::dyn_cast<llvm::GlobalObject>(allocSite)) {
+        alignment = GO->getAlignment();
+        if (const llvm::GlobalVariable* globalVar = llvm::dyn_cast<llvm::GlobalVariable>(GO)) {
+            // All GlobalVariables's have pointer type
+            assert(globalVar->getType()->isPointerTy() && "globalVar's type is not a pointer");
+            type = globalVar->getValueType();
+        }
+        else {
+            type = GO->getType();
+        }
+    }
+    else if (const llvm::AllocaInst* AI = llvm::dyn_cast<llvm::AllocaInst>(allocSite)) {
+        alignment = AI->getAlign().value();
+        type = AI->getAllocatedType();
+    }
+    else if (llvm::isa<llvm::InvokeInst>(allocSite) || llvm::isa<llvm::CallInst>(allocSite)) {
+        // FIXME: Model the semantics of the call to use the right alignment
+        const llvm::CallBase& cb = llvm::cast<llvm::CallBase>(*allocSite);
+        llvm::Function* fn = FunctionWrapper::getDirectCallTarget(cb, /*moduleIsFullyLinked=*/true);
+        if (fn)
+            allocationSiteName = fn->getName().str();
+
+        Logger::warn("Alignment of memory from call {} is not modelled. Using alignment of {}. " , allocationSiteName.c_str(), forcedAlignment);
+        alignment = forcedAlignment;
+    }
+    else {
+        llvm_unreachable("Unhandled allocation site");
+    }
+
+    if (alignment == 0) {
+        assert(type != NULL);
+        // No specified alignment. Get the alignment for the type.
+        if (type->isSized()) {
+            alignment = m_moduleStorage->getPrefTypeAlign(type);
+        }
+        else {
+            Logger::warn("Cannot determine memory alignment for {} Using alignment of {}", allocationSiteName.c_str(), forcedAlignment);
+            alignment = forcedAlignment;
+        }
+    }
+
+    // Currently we require alignment be a power of 2
+    if (isPowerOfTwo(alignment)) {
+        Logger::warn("Alignment of {} requested for {} but this not supported. Using alignment of {}", alignment, allocSite->getName().str().c_str(), forcedAlignment);
+        alignment = forcedAlignment;
+    }
+    assert(isPowerOfTwo(alignment) && "Returned alignment must be a power of two");
+    return alignment;
 }
 
 void Application::exit() {

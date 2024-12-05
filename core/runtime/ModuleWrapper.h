@@ -34,6 +34,7 @@ public:
 	llvm::Module* getOriginPtr();
 	std::uint64_t getTypeSize(llvm::Type *type);
 	std::uint64_t getTypeSizeInBits(llvm::Type *type);
+	uint64_t getPrefTypeAlign(llvm::Type *type);
 	llvm::TypeSize getTypeAllocSize(llvm::Type* type);
 	const llvm::StructLayout* getStructLayout(llvm::StructType* type);
 	const std::set<llvm::Function*>& getInternalFunctions() const { return m_internalFunctions;}

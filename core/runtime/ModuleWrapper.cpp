@@ -88,6 +88,11 @@ std::uint64_t ModuleWrapper::getTypeSizeInBits(llvm::Type* type)
     return m_targetData->getTypeSizeInBits(type);
 }
 
+uint64_t ModuleWrapper::getPrefTypeAlign(llvm::Type* type)
+{
+    return m_targetData->getPrefTypeAlignment(type);
+}
+
 llvm::TypeSize ModuleWrapper::getTypeAllocSize(llvm::Type* type)
 {
     return m_targetData->getTypeAllocSize(type);

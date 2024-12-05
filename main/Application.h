@@ -43,6 +43,7 @@ private:
 	void terminateStateOnExit(std::shared_ptr<ExecutionState>& state);
 	void terminateStateOnExecError(std::shared_ptr<ExecutionState>& state, const std::string& message, StateTerminationType reason = StateTerminationType::Execution);
 	void terminateStateOnProgramError(std::shared_ptr<ExecutionState>& state, const std::string& message, StateTerminationType reason);
+	void terminateStateOnSolverError(std::shared_ptr<ExecutionState>& state, const std::string& message);
 	void terminateStateOnError(std::shared_ptr<ExecutionState>& state, const std::string &message, StateTerminationType reason);
 	void transferToBasicBlock(llvm::BasicBlock* dst, llvm::BasicBlock* src, std::shared_ptr<ExecutionState>& state);
 	std::pair< std::shared_ptr<ExecutionState>, std::shared_ptr<ExecutionState>> fork(std::shared_ptr<ExecutionState>& currentState, const std::shared_ptr<Expr>& condition, bool isInternal, BranchType type);
@@ -60,6 +61,7 @@ private:
 	void terminateStateEarly(std::shared_ptr<ExecutionState>& state, const std::string& message,StateTerminationType reason);
 	bool shouldExitOn(StateTerminationType reason);
 	void callExternalFunction(std::shared_ptr<ExecutionState>& state,std::shared_ptr<InstructionWrapper> target, std::shared_ptr<FunctionWrapper> &callable, std::vector< std::shared_ptr<Expr> >& arguments);
+	uint64_t getAllocationAlignment(const llvm::Value* allocSite) const;
 private:
 	int argc = 0;
 	char** argv = nullptr;

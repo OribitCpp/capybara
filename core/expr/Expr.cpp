@@ -62,3 +62,9 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& os, const Expr& expr)
 	os << "Expr";
 	return os;
 }
+
+bool isPowerOfTwo(uint64_t x)
+{
+	if (x == 0) return 0;
+	return !(x & (x - 1));
+};

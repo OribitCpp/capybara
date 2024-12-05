@@ -112,3 +112,46 @@ llvm::Function* FunctionWrapper::getTargetFunction(llvm::Value* calledVal)
 		else	return nullptr;
 	}
 }
+
+llvm::Function* FunctionWrapper::getDirectCallTarget(const llvm::CallBase& cb, bool moduleIsFullyLinked)
+{
+	Value* v = cb.getCalledOperand();
+	bool viaConstantExpr = false;
+	// Walk through aliases and bitcasts to try to find
+	// the function being called.
+	do {
+		if (isa<llvm::GlobalVariable>(v)) {
+			// We don't care how we got this GlobalVariable
+			viaConstantExpr = false;
+
+			// Global variables won't be a direct call target. Instead, their
+			// value need to be read and is handled as indirect call target.
+			v = nullptr;
+		}
+		else if (Function* f = dyn_cast<Function>(v)) {
+			return f;
+		}
+		else if (llvm::GlobalAlias* ga = dyn_cast<GlobalAlias>(v)) {
+			if (moduleIsFullyLinked || !(ga->isInterposable())) {
+				v = ga->getAliasee();
+			}
+			else {
+				v = nullptr;
+			}
+		}
+		else if (llvm::ConstantExpr* ce = dyn_cast<llvm::ConstantExpr>(v)) {
+			viaConstantExpr = true;
+			v = ce->getOperand(0)->stripPointerCasts();
+		}
+		else {
+			v = nullptr;
+		}
+	} while (v != nullptr);
+
+	// NOTE: This assert may fire, it isn't necessarily a problem and
+	// can be disabled, I just wanted to know when and if it happened.
+	(void)viaConstantExpr;
+	assert((!viaConstantExpr) &&
+		"FIXME: Unresolved direct target for a constant expression");
+	return nullptr;
+}

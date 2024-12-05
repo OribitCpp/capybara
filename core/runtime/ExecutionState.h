@@ -7,6 +7,9 @@
 #include "FunctionWrapper.h"
 #include "StackFrame.h"
 #include "memory/MemoryObject.h"
+#include "runtime/ObjectState.h"
+#include "runtime/ArrayObject.h"
+#include "runtime/AddressSpace.h"
 
 enum class BranchType {
 	NONE,                                                       
@@ -28,6 +31,7 @@ enum class BranchType {
 class ExecutionState  {
 public:
 	ExecutionState(std::shared_ptr<FunctionWrapper> &func);
+	ExecutionState(ExecutionState&);
 	ExecutionState& operator=(const ExecutionState&) = delete;
 	ExecutionState(ExecutionState&&) = delete;
 	ExecutionState& operator=(ExecutionState&&) = delete;
@@ -36,7 +40,7 @@ public:
 	std::shared_ptr<StackFrame> getStackFrame();
 	void popFrame();
 
-	void saveInAllocator(const std::shared_ptr<MemoryObject> &object, bool isLocal);
+	void saveInAllocator(const std::shared_ptr<MemoryObject> &object);
 	void remove(const std::shared_ptr<MemoryObject> &object);
 	uint64_t ID() { return m_id; }
 	size_t getStackSize() const;
@@ -47,12 +51,20 @@ public:
 	void dumpStack(llvm::raw_ostream& out) const;
 	std::shared_ptr<Expr> getArgumentExpr(const std::shared_ptr<FunctionWrapper>& func, uint32_t index);
 	void bindArgument(const std::shared_ptr<FunctionWrapper>& func, uint32_t index, const std::shared_ptr<Expr>& expr);
+	std::shared_ptr<ObjectState>bindObjectInState(const std::shared_ptr<MemoryObject>& memObject, const std::shared_ptr<ArrayObject>& array = nullptr);
+	void unbindObject(const std::shared_ptr<MemoryObject>& memObj);
+	void addConstraint(std::shared_ptr<Expr> expr);
+
+	std::shared_ptr<ExecutionState> branch();
 public:
 	std::vector<std::shared_ptr<InstructionWrapper>>::iterator PC;
 	std::vector<std::shared_ptr<InstructionWrapper>>::iterator prevPC;
 	uint32_t incomingBBIndex = 0;
 	std::vector<std::shared_ptr<Expr>> constraints;
 	std::chrono::steady_clock::duration duraion;
+	uint32_t depth = 0;
+	bool coveredNew = false;
+	std::map<std::string, std::set<uint32_t>> coveredLines;
 private:
 	void setID();
 private:
@@ -61,6 +73,7 @@ private:
 	std::vector<std::shared_ptr<StackFrame>> m_stack;
 	static uint64_t s_total;
 	uint64_t m_id;
+	AddressSpace m_addressSpace;
 };
 
 struct ExecutionStateCmp {

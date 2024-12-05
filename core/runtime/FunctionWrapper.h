@@ -19,6 +19,7 @@ struct FunctionWrapper {
 		, std::shared_ptr<InstructionWrapper> instructionWrapper);
 	static llvm::Function* getTargetFunction(llvm::Value* calledVal);
 	uint32_t getArgRegister(uint32_t index) { return index; }
+	static llvm::Function* getDirectCallTarget(const llvm::CallBase& cb, bool moduleIsFullyLinked);
 public:
 	llvm::Function* function;
 	uint32_t numArgs;

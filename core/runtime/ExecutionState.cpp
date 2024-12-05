@@ -15,6 +15,21 @@ ExecutionState::ExecutionState(std::shared_ptr<FunctionWrapper>& func):
 	setID();
 }
 
+ExecutionState::ExecutionState(ExecutionState& state):
+    PC(state.PC),
+    prevPC(state.prevPC),
+    m_stack(state.m_stack),
+    incomingBBIndex(state.incomingBBIndex),
+    depth(state.depth),
+    m_addressSpace(state.m_addressSpace),
+    m_stackAllocator(state.m_stackAllocator),
+    m_heapAllocator(state.m_heapAllocator),
+    constraints(state.constraints),
+    coveredLines(state.coveredLines),
+    coveredNew(state.coveredNew){
+
+}
+
 void ExecutionState::pushFrame(std::vector<std::shared_ptr<InstructionWrapper>>::iterator pc, std::shared_ptr<FunctionWrapper> func)
 {
     std::shared_ptr<StackFrame> stackFrame = std::make_shared<StackFrame>(pc, func);
@@ -26,9 +41,9 @@ void ExecutionState::popFrame()
 	m_stack.pop_back();
 }
 
-void ExecutionState::saveInAllocator(const std::shared_ptr<MemoryObject>& object, bool isLocal)
+void ExecutionState::saveInAllocator(const std::shared_ptr<MemoryObject>& object)
 {
-	if (isLocal) {
+	if (object->isLocal) {
 		m_heapAllocator.insert(object);
 	}
 	else {
@@ -102,6 +117,39 @@ std::shared_ptr<Expr> ExecutionState::getArgumentExpr(const std::shared_ptr<Func
 void ExecutionState::bindArgument(const std::shared_ptr<FunctionWrapper>& func, uint32_t index, const std::shared_ptr<Expr>& expr)
 {
     m_stack.back()->locals[func->getArgRegister(index)] = expr;
+}
+
+std::shared_ptr<ObjectState> ExecutionState::bindObjectInState(const std::shared_ptr<MemoryObject>& memObject, const std::shared_ptr<ArrayObject>& arrayObj)
+{
+    std::shared_ptr<ObjectState> os;
+    if (arrayObj != nullptr) {
+        os = std::make_shared<ObjectState>(memObject, arrayObj);
+    }
+    else os = std::make_shared<ObjectState>(memObject);
+    if (memObject->isLocal) {
+        m_stack.back()->allocas.push_back(memObject);
+    }
+    return os;
+}
+
+void ExecutionState::unbindObject(const std::shared_ptr<MemoryObject>& memObj)
+{
+    m_addressSpace.unbindObject(memObj);
+}
+
+void ExecutionState::addConstraint(std::shared_ptr<Expr> expr)
+{
+    constraints.push_back(expr);
+}
+
+std::shared_ptr<ExecutionState> ExecutionState::branch()
+{
+    depth++;
+    std::shared_ptr<ExecutionState> falseState = std::make_shared<ExecutionState>(*this);
+    falseState->setID();
+    falseState->coveredNew = false;
+    falseState->coveredLines.clear();
+    return falseState;
 }
 
 std::shared_ptr<StackFrame> ExecutionState::getStackFrame()

@@ -13,18 +13,7 @@ public:
 
     MemoryObject(uint64_t _size, unsigned _alignment,
         bool _isLocal, bool _isGlobal, bool _isFixed,
-        const llvm::Value* _allocSite)
-        : id(counter++),
-        address(0),
-        size(_size),
-        alignment(_alignment),
-        name("unnamed"),
-        isLocal(_isLocal),
-        isGlobal(_isGlobal),
-        isFixed(_isFixed),
-        isUserSpecified(false),
-        allocSite(_allocSite) {
-    }
+        const llvm::Value* _allocSite);
 
     ~MemoryObject();
     MemoryObject(const MemoryObject& b) = delete;
@@ -48,5 +37,14 @@ public:
 private:
     static uint32_t counter;
 };
+
+struct MemoryObjectCmp {
+    bool operator()(const MemoryObject &a,const MemoryObject &b) const;
+};
+
+struct MemoryObjectPtrCmp {
+    bool operator()(const std::shared_ptr<MemoryObject> &a, const std::shared_ptr<MemoryObject>& b) const;
+};
+
 
 #endif // !MEMORY_OBJECT_H
