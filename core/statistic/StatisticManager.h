@@ -16,6 +16,8 @@ public:
 	static Statistics queries;
 	static Statistics forks;
 	static Statistics inhibitedForks;
+
+	static Statistics queryConstructs;
 private:
 	StatisticManager();
 };

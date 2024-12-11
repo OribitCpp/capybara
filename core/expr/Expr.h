@@ -125,5 +125,5 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& os, const std::shared_ptr<T>& e
 
 
 bool isPowerOfTwo(uint64_t x);
-
+unsigned indexOfSingleBit(uint64_t x);
 #endif // ! EXPR_H

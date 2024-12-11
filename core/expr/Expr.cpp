@@ -68,3 +68,30 @@ bool isPowerOfTwo(uint64_t x)
 	if (x == 0) return 0;
 	return !(x & (x - 1));
 };
+
+uint32_t withoutRightmostBit(uint32_t x) {
+	return x & (x - 1);
+}
+
+uint32_t indexOfSingleBit(uint32_t x) {
+	assert(withoutRightmostBit(x) == 0);
+	uint32_t res = 0;
+	if (x & 0xFFFF0000) res += 16;
+	if (x & 0xFF00FF00) res += 8;
+	if (x & 0xF0F0F0F0) res += 4;
+	if (x & 0xCCCCCCCC) res += 2;
+	if (x & 0xAAAAAAAA) res += 1;
+	assert(res < 32);
+	assert((UINT32_C(1) << res) == x);
+	return res;
+}
+
+unsigned indexOfSingleBit(uint64_t x) {
+	assert((x & (x - 1)) == 0);
+	unsigned res = indexOfSingleBit((uint32_t)(x | (x >> 32)));
+	if (x & (UINT64_C(0xFFFFFFFF) << 32))
+		res += 32;
+	assert(res < 64);
+	assert((UINT64_C(1) << res) == x);
+	return res;
+}

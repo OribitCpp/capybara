@@ -2,7 +2,7 @@
 
 NotExpr::NotExpr(const std::shared_ptr<Expr>& base):Expr(0,0)
 {
-	rightExpr = base;
+	leftExpr = base;
 }
 
 ExprKind NotExpr::getKind()

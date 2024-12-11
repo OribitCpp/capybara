@@ -1,8 +1,6 @@
 #ifndef MEMORY_BLOCK_H
 #define MEMORY_BLOCK_H
 
-#include "RefCounter.h"
-
 class MemoryBlock {
 	friend class MemoryMananger;
 public:

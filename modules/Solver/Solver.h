@@ -21,10 +21,10 @@ enum SolverValidity
 	Unknown = 0
 };
 
-class Solver {
+class SolverBase {
 public:
-	Solver() {}
-	virtual ~Solver() {}
+	SolverBase() {}
+	virtual ~SolverBase() {}
 	void setTimeOut(std::chrono::steady_clock::duration value) {
 		m_timeOut = value;
 	}
@@ -48,4 +48,4 @@ private:
 	std::chrono::steady_clock::duration m_timeOut;
 };
 
-#endif // ! SOLVER_H
+#endif // 

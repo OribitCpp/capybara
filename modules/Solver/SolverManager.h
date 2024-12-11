@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include "expr/Expr.h"
 #include "expr/ConstantExpr.h"
+#include "Solver.h"
 #include "Z3Solver.h"
 
 class SolverManager {
@@ -21,7 +22,7 @@ public:
 
 	void setTimeOut(std::chrono::steady_clock::duration dutation);
 private:
-	std::unordered_map<SolverType, std::shared_ptr<Solver>> m_solversMap;
+	std::unordered_map<SolverType, std::shared_ptr<SolverBase>> m_solversMap;
 };
 
 #endif // ! SolverManager_h

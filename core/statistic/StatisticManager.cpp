@@ -13,3 +13,5 @@ Statistics StatisticManager::terminationSolverError("terminationSolverError");
 Statistics StatisticManager::queries("queries");
 Statistics StatisticManager::forks("forks");
 Statistics StatisticManager::inhibitedForks("inhibitedForks");
+
+Statistics StatisticManager::queryConstructs("queryConstructs");

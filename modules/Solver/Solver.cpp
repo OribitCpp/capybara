@@ -3,7 +3,7 @@
 
 #include <cassert>
 
-bool Solver::evaluate(const std::vector<std::shared_ptr<Expr>> constaints, std::shared_ptr<Expr> expr, SolverValidity& result)
+bool SolverBase::evaluate(const std::vector<std::shared_ptr<Expr>> constaints, std::shared_ptr<Expr> expr, SolverValidity& result)
 {
     assert(expr->getWidth() == 1 && "Invalid expression type!");
 
@@ -16,7 +16,7 @@ bool Solver::evaluate(const std::vector<std::shared_ptr<Expr>> constaints, std::
     return computeValidity(constaints, expr, result);
 }
 
-bool Solver::mustBeTrue(const std::vector<std::shared_ptr<Expr>> constaints, std::shared_ptr<Expr> expr, bool& result)
+bool SolverBase::mustBeTrue(const std::vector<std::shared_ptr<Expr>> constaints, std::shared_ptr<Expr> expr, bool& result)
 {
     assert(expr->getWidth() == 1 && "Invalid expression type!");
 
@@ -27,7 +27,7 @@ bool Solver::mustBeTrue(const std::vector<std::shared_ptr<Expr>> constaints, std
     return computeTruth(constaints,expr, result);
 }
 
-bool Solver::getValue(const std::vector<std::shared_ptr<Expr>> constaints, std::shared_ptr<Expr> expr, std::shared_ptr<ConstantExpr>& result)
+bool SolverBase::getValue(const std::vector<std::shared_ptr<Expr>> constaints, std::shared_ptr<Expr> expr, std::shared_ptr<ConstantExpr>& result)
 {
     if (std::shared_ptr<ConstantExpr> CE = std::dynamic_pointer_cast<ConstantExpr>(expr)) {
         result = CE;
@@ -43,7 +43,7 @@ bool Solver::getValue(const std::vector<std::shared_ptr<Expr>> constaints, std::
     return true;
 }
 
-bool Solver::computeValidity(const std::vector<std::shared_ptr<Expr>>& contrains, std::shared_ptr<Expr> expr, SolverValidity &result)
+bool SolverBase::computeValidity(const std::vector<std::shared_ptr<Expr>>& contrains, std::shared_ptr<Expr> expr, SolverValidity &result)
 {
     bool isTrue, isFalse;
     if (!computeTruth(contrains,expr , isTrue))

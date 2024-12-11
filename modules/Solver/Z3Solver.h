@@ -4,7 +4,7 @@
 #include "Solver.h"
 #include "Z3Builder.h"
 
-class Z3Solver : public Solver {
+class Z3Solver : public SolverBase {
 public:
 	Z3Solver();
 	~Z3Solver();
@@ -15,7 +15,7 @@ protected:
 	virtual bool computeValue(const std::vector<std::shared_ptr<Expr>>& contrains, std::shared_ptr<Expr> expr, std::shared_ptr<ConstantExpr>& result)  override;
 
 private:
-	z3::context m_z3Context;
+	Z3Builder m_builder;
 };
 
 #endif
