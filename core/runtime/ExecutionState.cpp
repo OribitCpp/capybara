@@ -152,6 +152,11 @@ std::shared_ptr<ExecutionState> ExecutionState::branch()
     return falseState;
 }
 
+bool ExecutionState::resolveOne(const std::shared_ptr<ConstantExpr>& addr, const std::shared_ptr<MemoryObject>& object)
+{
+    return m_addressSpace.resolveOne(this,);
+}
+
 std::shared_ptr<StackFrame> ExecutionState::getStackFrame()
 {
 	return m_stack.back();

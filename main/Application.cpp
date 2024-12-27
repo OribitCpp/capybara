@@ -2339,195 +2339,173 @@ std::shared_ptr<InstructionWrapper> Application::getLastNonKleeInternalInstructi
 
 void Application::executeMemoryOperation(std::shared_ptr<ExecutionState>& state, bool isWrite, std::shared_ptr<Expr> address, std::shared_ptr<Expr> value, std::shared_ptr<InstructionWrapper> target)
 {
-    //uint32_t type = (isWrite ? value->getWidth() : getWidthForLLVMType(target->instruction->getType()));
-    //unsigned bytes = Expr::getMinBytesForWidth(type);
+    uint32_t type = (isWrite ? value->getWidth() :  m_moduleStorage->getTypeSizeInBits(target->instruction->getType()));
+    unsigned bytes = Expr::getMinBytesForWidth(type);
 
-    //if (SimplifySymIndices) {
-    //    if (!isa<ConstantExpr>(address))
-    //        address = ConstraintManager::simplifyExpr(state.constraints, address);
-    //    if (isWrite && !isa<ConstantExpr>(value))
-    //        value = ConstraintManager::simplifyExpr(state.constraints, value);
-    //}
+    //if (!std::dynamic_pointer_cast<ConstantExpr>(address))
+    //    address = ConstraintManager::simplifyExpr(state->constraints, address);
+    //if (isWrite && !dynamic_pointer_cast<ConstantExpr>(value))
+    //    value = ConstraintManager::simplifyExpr(state->constraints, value);
 
-    //address = optimizer.optimizeExpr(address, true);
+    address = m_exprOptimizer.optimizeExpr(address, true);
 
-    //ObjectPair op;
-    //bool success;
-    //solver->setTimeout(coreSolverTimeout);
+    bool success;
+    bool resolveSingleObject = true;
 
-    //bool resolveSingleObject = SingleObjectResolution;
+    if (resolveSingleObject && !std::dynamic_pointer_cast<ConstantExpr>(address)) {
+        // Address is symbolic
 
-    //if (resolveSingleObject && !isa<ConstantExpr>(address)) {
-    //    // Address is symbolic
+        resolveSingleObject = false;
+        auto base_it = state->base_addrs.find(address);
+        if (base_it != state->base_addrs.end()) {
+            // Concrete address found in the map, now find the associated memory
+            // object
+            if (!state->addressSpace.resolveOne(state, solver, base_it->second, op, success) | !success) {
+                Logger::warn("Failed to resolve concrete address from the base_addrs map to a memory object");
+            }
+            else {
+                // We have resolved the stored concrete address to a memory object.
+                // Now let's see if we can prove an overflow - we are only interested in
+                // two cases: either we overflow and it's a bug or we don't and we carry
+                // on; in this mode we are not interested in trying out other memory
+                // objects
+                resolveSingleObject = true;
+            }
+        }
+    }
+    else {
+        resolveSingleObject = false;
+    }
 
-    //    resolveSingleObject = false;
-    //    auto base_it = state.base_addrs.find(address);
-    //    if (base_it != state.base_addrs.end()) {
-    //        // Concrete address found in the map, now find the associated memory
-    //        // object
-    //        if (!state.addressSpace.resolveOne(state, solver.get(), base_it->second, op,
-    //            success) ||
-    //            !success) {
-    //            klee_warning("Failed to resolve concrete address from the base_addrs "
-    //                "map to a memory object");
-    //        }
-    //        else {
-    //            // We have resolved the stored concrete address to a memory object.
-    //            // Now let's see if we can prove an overflow - we are only interested in
-    //            // two cases: either we overflow and it's a bug or we don't and we carry
-    //            // on; in this mode we are not interested in trying out other memory
-    //            // objects
-    //            resolveSingleObject = true;
-    //        }
-    //    }
-    //}
-    //else {
-    //    resolveSingleObject = false;
-    //}
+    if (!resolveSingleObject) {
+        if (!state.addressSpace.resolveOne(state, solver, address, op, success)) {
+            address = toConstant(state, address, "resolveOne failure");
+            success = state->addressSpace.resolveOne(std::dynamic_pointer_cast<ConstantExpr>(address), op);
+        }
 
-    //if (!resolveSingleObject) {
-    //    if (!state.addressSpace.resolveOne(state, solver.get(), address, op, success)) {
-    //        address = toConstant(state, address, "resolveOne failure");
-    //        success = state.addressSpace.resolveOne(cast<ConstantExpr>(address), op);
-    //    }
-    //    solver->setTimeout(time::Span());
+        if (success) {
+            const MemoryObject* mo = op.first;
 
-    //    if (success) {
-    //        const MemoryObject* mo = op.first;
+            if (MaxSymArraySize && mo->size >= MaxSymArraySize) {
+                address = toConstant(state, address, "max-sym-array-size");
+            }
 
-    //        if (MaxSymArraySize && mo->size >= MaxSymArraySize) {
-    //            address = toConstant(state, address, "max-sym-array-size");
-    //        }
+            std::shared_ptr<Expr> offset = mo->getOffsetExpr(address);
+            std::shared_ptr<Expr> check = mo->getBoundsCheckOffset(offset, bytes);
+            check = m_exprOptimizer.optimizeExpr(check, true);
 
-    //        ref<Expr> offset = mo->getOffsetExpr(address);
-    //        ref<Expr> check = mo->getBoundsCheckOffset(offset, bytes);
-    //        check = optimizer.optimizeExpr(check, true);
+            bool inBounds;
+            solver->setTimeout(coreSolverTimeout);
+            bool success = solver->mustBeTrue(state->constraints, check, inBounds, state->duraion);
+            if (!success) {
+                state->PC = state->prevPC;
+                terminateStateOnSolverError(state, "Query timed out (bounds check).");
+                return;
+            }
 
-    //        bool inBounds;
-    //        solver->setTimeout(coreSolverTimeout);
-    //        bool success = solver->mustBeTrue(state.constraints, check, inBounds,
-    //            state.queryMetaData);
-    //        solver->setTimeout(time::Span());
-    //        if (!success) {
-    //            state.pc = state.prevPC;
-    //            terminateStateOnSolverError(state, "Query timed out (bounds check).");
-    //            return;
-    //        }
+            if (inBounds) {
+                const ObjectState* os = op.second;
+                if (isWrite) {
+                    if (os->getReadOnly()) {
+                        terminateStateOnProgramError(state, "memory error: object read only", StateTerminationType::ReadOnly);
+                    }
+                    else {
+                        ObjectState* wos = state.addressSpace.getWriteable(mo, os);
+                        wos->write(offset, value);
+                    }
+                }
+                else {
+                    std::shared_ptr<Expr> result = os->read(offset, type);
 
-    //        if (inBounds) {
-    //            const ObjectState* os = op.second;
-    //            if (isWrite) {
-    //                if (os->readOnly) {
-    //                    terminateStateOnProgramError(state, "memory error: object read only",
-    //                        StateTerminationType::ReadOnly);
-    //                }
-    //                else {
-    //                    ObjectState* wos = state.addressSpace.getWriteable(mo, os);
-    //                    wos->write(offset, value);
-    //                }
-    //            }
-    //            else {
-    //                ref<Expr> result = os->read(offset, type);
+                    if (interpreterOpts.MakeConcreteSymbolic)
+                        result = replaceReadWithSymbolic(state, result);
 
-    //                if (interpreterOpts.MakeConcreteSymbolic)
-    //                    result = replaceReadWithSymbolic(state, result);
+                    state->bindLocal(target, result);
+                }
 
-    //                bindLocal(target, state, result);
-    //            }
+                return;
+            }
+        }
+    }
 
-    //            return;
-    //        }
-    //    }
-    //}
+    // we are on an error path (no resolution, multiple resolution, one
+    // resolution with out of bounds), or we do a single object resolution
 
-    //// we are on an error path (no resolution, multiple resolution, one
-    //// resolution with out of bounds), or we do a single object resolution
+    address = m_exprOptimizer.optimizeExpr(address, true);
+    ResolutionList rl;
+    bool incomplete = false;
 
-    //address = optimizer.optimizeExpr(address, true);
-    //ResolutionList rl;
-    //bool incomplete = false;
+    if (!resolveSingleObject) {
+        incomplete = state.addressSpace.resolve(state, solver.get(), address, rl, 0, coreSolverTimeout);
+    }
+    else {
+        rl.push_back(op); // we already have the object pair, no need to look for it
+    }
+    // XXX there is some query wasteage here. who cares?
+    std::shared_ptr<ExecutionState> unbound = state;
 
-    //if (!resolveSingleObject) {
-    //    solver->setTimeout(coreSolverTimeout);
-    //    incomplete = state.addressSpace.resolve(state, solver.get(), address, rl, 0,
-    //        coreSolverTimeout);
-    //    solver->setTimeout(time::Span());
-    //}
-    //else {
-    //    rl.push_back(op); // we already have the object pair, no need to look for it
-    //}
-    //// XXX there is some query wasteage here. who cares?
-    //ExecutionState* unbound = &state;
+    for (ResolutionList::iterator i = rl.begin(), ie = rl.end(); i != ie; ++i) {
+        const MemoryObject* mo = i->first;
+        const ObjectState* os = i->second;
+        std::shared_ptr<Expr> inBounds = mo->getBoundsCheckPointer(address, bytes);
 
-    //for (ResolutionList::iterator i = rl.begin(), ie = rl.end(); i != ie; ++i) {
-    //    const MemoryObject* mo = i->first;
-    //    const ObjectState* os = i->second;
-    //    ref<Expr> inBounds = mo->getBoundsCheckPointer(address, bytes);
+        auto branches = fork(unbound, inBounds, true, BranchType::MemOp);
+        std::shared_ptr<ExecutionState> bound = branches.first;
 
-    //    StatePair branches = fork(*unbound, inBounds, true, BranchType::MemOp);
-    //    ExecutionState* bound = branches.first;
+        // bound can be 0 on failure or overlapped 
+        if (bound) {
+            if (isWrite) {
+                if (os->getReadOnly()) {
+                    terminateStateOnProgramError(bound, "memory error: object read only", StateTerminationType::ReadOnly);
+                }
+                else {
+                    ObjectState* wos = bound->addressSpace.getWriteable(mo, os);
+                    wos->write(mo->getOffsetExpr(address), value);
+                }
+            }
+            else {
+                std::shared_ptr<Expr> result = os->read(mo->getOffsetExpr(address), type);
+                bound->bindLocal(target, result);
+            }
+        }
 
-    //    // bound can be 0 on failure or overlapped 
-    //    if (bound) {
-    //        if (isWrite) {
-    //            if (os->readOnly) {
-    //                terminateStateOnProgramError(*bound, "memory error: object read only",
-    //                    StateTerminationType::ReadOnly);
-    //            }
-    //            else {
-    //                ObjectState* wos = bound->addressSpace.getWriteable(mo, os);
-    //                wos->write(mo->getOffsetExpr(address), value);
-    //            }
-    //        }
-    //        else {
-    //            ref<Expr> result = os->read(mo->getOffsetExpr(address), type);
-    //            bindLocal(target, *bound, result);
-    //        }
-    //    }
+        unbound = branches.second;
+        if (!unbound)
+            break;
+    }
 
-    //    unbound = branches.second;
-    //    if (!unbound)
-    //        break;
-    //}
-
-    //// XXX should we distinguish out of bounds and overlapped cases?
-    //if (unbound) {
-    //    if (incomplete) {
-    //        terminateStateOnSolverError(*unbound, "Query timed out (resolve).");
-    //    }
-    //    else {
-    //        if (auto CE = dyn_cast<ConstantExpr>(address)) {
-    //            std::uintptr_t ptrval = CE->getZExtValue();
-    //            auto ptr = reinterpret_cast<void*>(ptrval);
-    //            if (ptrval < MemoryManager::pageSize) {
-    //                terminateStateOnProgramError(
-    //                    *unbound, "memory error: null page access",
-    //                    StateTerminationType::Ptr, getAddressInfo(*unbound, address));
-    //                return;
-    //            }
-    //            else if (MemoryManager::isDeterministic) {
-    //                using kdalloc::LocationInfo;
-    //                auto li = unbound->heapAllocator.locationInfo(ptr, bytes);
-    //                if (li == LocationInfo::LI_AllocatedOrQuarantined) {
-    //                    // In case there is no size mismatch (checked by resolving for base
-    //                    // address), the object is quarantined.
-    //                    auto base = reinterpret_cast<std::uintptr_t>(li.getBaseAddress());
-    //                    auto baseExpr = Expr::createPointer(base);
-    //                    ObjectPair op;
-    //                    if (!unbound->addressSpace.resolveOne(baseExpr, op)) {
-    //                        terminateStateOnProgramError(
-    //                            *unbound, "memory error: use after free",
-    //                            StateTerminationType::Ptr, getAddressInfo(*unbound, address));
-    //                        return;
-    //                    }
-    //                }
-    //            }
-    //        }
-    //        terminateStateOnProgramError(
-    //            *unbound, "memory error: out of bound pointer",
-    //            StateTerminationType::Ptr, getAddressInfo(*unbound, address));
-    //    }
-    //}
+    // XXX should we distinguish out of bounds and overlapped cases?
+    if (unbound) {
+        if (incomplete) {
+            terminateStateOnSolverError(*unbound, "Query timed out (resolve).");
+        }
+        else {
+            if (auto CE = std::dynamic_pointer_cast<ConstantExpr>(address)) {
+                std::uintptr_t ptrval = CE->getZExtValue();
+                auto ptr = reinterpret_cast<void*>(ptrval);
+                if (ptrval < MemoryManager::pageSize) {
+                    terminateStateOnProgramError(unbound, "memory error: null page access", StateTerminationType::Ptr, getAddressInfo(*unbound, address));
+                    return;
+                }
+                else if (MemoryManager::isDeterministic) {
+                    using kdalloc::LocationInfo;
+                    auto li = unbound->heapAllocator.locationInfo(ptr, bytes);
+                    if (li == LocationInfo::LI_AllocatedOrQuarantined) {
+                        // In case there is no size mismatch (checked by resolving for base
+                        // address), the object is quarantined.
+                        auto base = reinterpret_cast<std::uintptr_t>(li.getBaseAddress());
+                        auto baseExpr = Expr::createPointer(base);
+                        ObjectPair op;
+                        if (!unbound->addressSpace.resolveOne(baseExpr, op)) {
+                            terminateStateOnProgramError(unbound, "memory error: use after free", StateTerminationType::Ptr, getAddressInfo(*unbound, address));
+                            return;
+                        }
+                    }
+                }
+            }
+            terminateStateOnProgramError(unbound, "memory error: out of bound pointer",StateTerminationType::Ptr, getAddressInfo(*unbound, address));
+        }
+    }
 }
 
 void Application::processTestCase(const std::shared_ptr<ExecutionState>& state, const std::string& message)

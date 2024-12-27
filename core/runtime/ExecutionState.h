@@ -56,6 +56,7 @@ public:
 	void addConstraint(std::shared_ptr<Expr> expr);
 
 	std::shared_ptr<ExecutionState> branch();
+	bool resolveOne(const std::shared_ptr<ConstantExpr>& addr, const std::shared_ptr<MemoryObject>& object);
 public:
 	std::vector<std::shared_ptr<InstructionWrapper>>::iterator PC;
 	std::vector<std::shared_ptr<InstructionWrapper>>::iterator prevPC;
@@ -65,6 +66,7 @@ public:
 	uint32_t depth = 0;
 	bool coveredNew = false;
 	std::map<std::string, std::set<uint32_t>> coveredLines;
+	std::map<std::shared_ptr<Expr>, std::shared_ptr<ConstantExpr>> base_addrs;
 private:
 	void setID();
 private:
